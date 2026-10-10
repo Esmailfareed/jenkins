@@ -31,9 +31,9 @@ EOF
                 withSonarQubeEnv('sonarqube') {
                     sh '''
                         ${scannerHome}/bin/sonar-scanner \
-                          -Dsonar.projectKey=sora-b \
-                          -Dsonar.projectName=sora-b \
-                          -Dsonar.sources=src
+                          -Dsonar.projectKey=sora-a \
+                          -Dsonar.projectName=sora-b
+                         
                     '''
                 }
             }
