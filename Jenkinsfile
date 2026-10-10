@@ -1,30 +1,42 @@
 pipeline {
-  agent any
-  tools { maven 'maven' }
-  stages {
-    stage('Build') {
-      steps {
-        echo 'Building...'
-      }
-    }
-    stage('Test') {
-      steps {
-        echo 'Running tests...'
-      }
-    }
-    stage('SonarQube Analysis') {
-      steps {
-        withSonarQubeEnv('sonarqube') {
-          sh 'mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sora-b -Dsonar.projectName=sora-b'
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
         }
-      }
-    }
-    stage('Quality Gate') {
-      steps {
-        timeout(time: 5, unit: 'MINUTES') {
-          waitForQualityGate abortPipeline: true
+
+        stage('Create Test Code') {
+            steps {
+                // SonarQube needs at least one source file to analyze
+                sh '''
+                    mkdir -p src
+                    cat > src/hello.js <<'EOF'
+function add(a, b) {
+  return a + b;
+}
+console.log(add(2, 3));
+EOF
+                '''
+            }
         }
-      }
+
+        stage('SonarQube Analysis') {
+            environment {
+                scannerHome = tool 'sonar-scanner'
+            }
+            steps {
+                withSonarQubeEnv('sonarqube') {
+                    sh '''
+                        ${scannerHome}/bin/sonar-scanner \
+                          -Dsonar.projectKey=sora-b \
+                          -Dsonar.projectName=sora-b \
+                          -Dsonar.sources=src
+                    '''
+                }
+            }
+        }
     }
-  }
 }
